@@ -12,8 +12,21 @@ public class Main {
     map.put("SSS", new Person(7, "SSS"));
     map.put("JK", new Person(8, "JK"));
     map.put("BB", new Person(9, "BB"));
+
     map.put("BB", new Person(9, "FFFFFFFFFFFFF"));
 
-    map.entrySet().stream().filter(Objects::nonNull).forEach(e-> System.out.println(e.getKey() + " " + e.getValue()));
+    map.put("B984u 98cqu498B", new Person(64356, "y734y7n4y7nf7"));
+    map.put("ktngosjtbnosbostnbsotkbso",new Person(222, "wkiejrgnweijrgwoe"));
+
+    System.out.println("Remove: " + map.remove("DDD"));
+
+    System.out.println("Size: " + map.size());
+
+    System.out.println("Contains key: " + map.containsKey("Sam"));
+
+    System.out.println("Contains value: " + map.containsValue(new Person(1, "Frank")));
+
+
+    map.entrySet().stream().filter(Objects::nonNull).forEach(e -> System.out.println(e.getKey() + " " + e.getValue()));
   }
 }

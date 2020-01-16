@@ -22,7 +22,7 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
   }
 
   public int size() {
-    return (int) Arrays.stream(KeyAndValues).count();
+    return (int) Arrays.stream(KeyAndValues).filter(Objects::nonNull).count();
   }
 
   public boolean isEmpty() {
@@ -42,15 +42,17 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
   }
 
   private Pair[] copyArray() {
-    Pair[] newArray = Arrays.copyOf(KeyAndValues, (int) (KeyAndValues.length * 1.5));
+    Pair[] newArray = (Pair[]) Array.newInstance(Pair.class, (int) (capacity * 1.5));
+    System.arraycopy(KeyAndValues, 0, newArray, 0, KeyAndValues.length - 1);
     return newArray;
   }
 
   public V put(K key, V value) {
     V result = value;
 
-    if ((size() / 100) > 0.75)
+    if ((((size() * 100)/capacity)/100) > 0.75) {
       KeyAndValues = copyArray();
+    }
 
     int n = KeyAndValues.length;
     int index = key.hashCode() & (n - 1);
@@ -58,12 +60,15 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
       KeyAndValues[index] = new Pair(key, value);
       return null;
     }
-    for (Pair p : KeyAndValues)
-      if (key.equals(p.getKey())) {
-        result = p.getValue();
-        p.setValue(value);
-        break;
+    for (Pair p : KeyAndValues) {
+      if (p != null) {
+        if (key.equals(p.getKey())) {
+          result = p.getValue();
+          p.setValue(value);
+          break;
+        }
       }
+    }
     return result;
   }
 

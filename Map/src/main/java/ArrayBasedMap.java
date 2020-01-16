@@ -1,43 +1,65 @@
+import java.lang.reflect.Array;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ArrayBasedMap<K, V> implements Map<K, V> {
 
-  private List<Pair> KeyAndValues = new ArrayList<Pair>();
+  private Pair[] KeyAndValues;
+
+  private int capacity = 16;
+
+  public ArrayBasedMap() {
+    KeyAndValues = (Pair[]) Array.newInstance(Pair.class, capacity);
+  }
+
+  public ArrayBasedMap(int capacity) {
+    this.capacity = capacity;
+    KeyAndValues = (Pair[]) Array.newInstance(Pair.class, capacity);
+  }
+
+  public ArrayBasedMap(Pair[] keyAndValues) {
+    KeyAndValues = keyAndValues;
+  }
 
   public int size() {
-    return KeyAndValues.size();
+    return (int) Arrays.stream(KeyAndValues).count();
   }
 
   public boolean isEmpty() {
-    return KeyAndValues.isEmpty();
+    return Arrays.stream(KeyAndValues).anyMatch(Objects::nonNull);
   }
 
   public boolean containsKey(Object key) {
-    for (Pair p : KeyAndValues)
-      if (p.getKey().equals(key)) return true;
-    return false;
+    return Arrays.stream(KeyAndValues).filter(Objects::nonNull).anyMatch(e -> e.getKey().equals(key));
   }
 
   public boolean containsValue(Object value) {
-    for (Pair p : KeyAndValues)
-      if (p.getValue().equals(value)) return true;
-    return false;
+    return Arrays.stream(KeyAndValues).filter(Objects::nonNull).anyMatch(e -> e.getValue().equals(value));
   }
 
   public V get(Object key) {
-    for (Pair p : KeyAndValues)
-      if (p.getKey().equals(key)) return p.getValue();
-    return null;
+    return (V) Arrays.stream(KeyAndValues).filter(e -> e.getKey().equals(key)).findFirst().get();
+  }
+
+  private Pair[] copyArray() {
+    Pair[] newArray = Arrays.copyOf(KeyAndValues, (int) (KeyAndValues.length * 1.5));
+    return newArray;
   }
 
   public V put(K key, V value) {
     V result = value;
-    if (!containsKey(key)) {
-      KeyAndValues.add(new Pair(key, value));
+
+    if ((size() / 100) > 0.75)
+      KeyAndValues = copyArray();
+
+    int n = KeyAndValues.length;
+    int index = key.hashCode() & (n - 1);
+    if (!containsKey(key) & KeyAndValues[index] == null) {
+      KeyAndValues[index] = new Pair(key, value);
       return null;
     }
     for (Pair p : KeyAndValues)
-      if (p.getKey().equals(key)) {
+      if (key.equals(p.getKey())) {
         result = p.getValue();
         p.setValue(value);
         break;
@@ -47,11 +69,11 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
 
   public V remove(Object key) {
     V value = null;
-    for (int i = 0; i < KeyAndValues.size(); i++) {
-      final Pair p = KeyAndValues.get(i);
+    for (int i = 0; i < KeyAndValues.length; i++) {
+      final Pair p = KeyAndValues[i];
       if (p.getKey().equals(key)) {
         value = p.getValue();
-        KeyAndValues.remove(i);
+        KeyAndValues[i] = null;
         return value;
       }
     }
@@ -59,28 +81,24 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
   }
 
   public void putAll(Map<? extends K, ? extends V> m) {
-    for (Map.Entry<K, V> e : (Set<Map.Entry<K, V>>)(Set)m.entrySet())
+    for (Map.Entry<K, V> e : (Set<Map.Entry<K, V>>) (Set) m.entrySet())
       put(e.getKey(), e.getValue());
   }
 
   public void clear() {
-    KeyAndValues.clear();
+    Arrays.fill(KeyAndValues, null);
   }
 
   public Set<K> keySet() {
-    final Set<K> keys = new HashSet<K>();
-    for (Pair p : KeyAndValues) keys.add(p.getKey());
-    return keys;
+    return Arrays.stream(KeyAndValues).map(Pair::getKey).collect(Collectors.toSet());
   }
 
   public Collection<V> values() {
-    final List<V> val = new ArrayList<>();
-    for (Pair p : KeyAndValues) val.add(p.getValue());
-    return val;
+    return Arrays.stream(KeyAndValues).map(Pair::getValue).collect(Collectors.toList());
   }
 
   public Set<Entry<K, V>> entrySet() {
-    return (Set<Entry<K, V>>)(Set) new HashSet<>(KeyAndValues);
+    return (Set<Entry<K, V>>) (Set) new HashSet<>(Arrays.asList(KeyAndValues));
   }
 
   private class Pair implements Map.Entry<K, V> {
@@ -123,7 +141,7 @@ public class ArrayBasedMap<K, V> implements Map<K, V> {
 
     @Override
     public int hashCode() {
-      return (key   == null ? 0 :   key.hashCode()) ^
+      return (key == null ? 0 : key.hashCode()) ^
         (value == null ? 0 : value.hashCode());
     }
   }
